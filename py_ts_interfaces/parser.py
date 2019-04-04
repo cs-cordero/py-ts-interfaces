@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Optional
+from typing import Dict, Optional
 import astroid
 import warnings
 
@@ -11,6 +11,15 @@ def read_file(path: str) -> str:
 
 class Interface:
     pass
+
+
+TYPE_MAP: Dict[str, str] = {
+    "bool": "boolean",
+    "str": "string",
+    "int": "number",
+    "float": "number",
+    "complex": "number",
+}
 
 
 def has_dataclass_decorator(decorators: Optional[astroid.Decorators]) -> bool:
@@ -49,7 +58,36 @@ class Parser:
                 )
                 continue
 
-            self.write_ast_node_to_interface(current)
+            serialized_types = self.serialize_ast_node_annassigns(current)
+            # TODO: Test code
+            if serialized_types:
+                print()
+                print(f"interface {current.name} {{")
+                print("\n".join(f"    {k}: {v};" for k, v in serialized_types.items()))
+                print(f"}}\n")
 
-    def write_ast_node_to_interface(self, node: astroid.ClassDef) -> None:
-        pass
+    def serialize_ast_node_annassigns(self, node: astroid.ClassDef) -> Dict[str, str]:
+        # TODO: Clean this up
+        serialized_types: Dict[str, str] = {}
+        for child in node.body:
+            if not isinstance(child, astroid.AnnAssign):
+                continue
+
+            # TODO: This deserves to be a standalone, well-tested function.
+            is_optional = (
+                isinstance(child.annotation, astroid.Subscript)
+                and child.annotation.value.name == "Optional"
+            )
+            name = child.target.name
+            if is_optional:
+                name += "?"
+
+            if isinstance(child.annotation, astroid.Subscript):
+                if isinstance(child.annotation.slice, astroid.Index):
+                    annotation = TYPE_MAP[child.annotation.slice.value.name]
+                if child.annotation.value.name == "List":
+                    annotation += "[]"
+            else:
+                annotation = child.annotation.name
+            serialized_types[name] = TYPE_MAP.get(annotation, annotation)
+        return serialized_types

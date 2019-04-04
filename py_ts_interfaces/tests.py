@@ -62,6 +62,22 @@ TEST_FIVE = """
     class Bar(Interface):
         pass
 """
+TEST_SIX = """
+    from dataclasses import dataclass
+    from py_ts_interfaces import Interface
+    from typing import List, Optional
+
+
+    @dataclass
+    class Foo(Interface):
+        b: bool
+        x: str
+        y: int
+        z: float
+        za: complex
+        o: Optional[str]
+        l: List[str]
+"""
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
@@ -71,6 +87,13 @@ TEST_FIVE = """
 )
 def test_parse(code, expected_call_count, interface_qualname):
     parser = Parser(interface_qualname)
-    with patch.object(parser, "write_ast_node_to_interface") as mock_writer:
+    with patch.object(parser, "serialize_ast_node_annassigns") as mock_writer:
         parser.parse(code=code)
         assert mock_writer.call_count == expected_call_count
+
+
+@pytest.mark.parametrize("code", [TEST_SIX])
+def test_writer(code, interface_qualname):
+    parser = Parser(interface_qualname)
+    parser.parse(code=code)
+    # TODO: Finish testing the code parser
