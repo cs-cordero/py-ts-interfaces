@@ -1,7 +1,6 @@
 from collections import deque
-from typing import Dict, List, NamedTuple, Optional, Set
+from typing import Dict, List, NamedTuple, Optional
 import astroid
-import os
 import warnings
 
 
@@ -43,11 +42,9 @@ class Parser:
         self.interface_qualname = interface_qualname
         self.outpath = outpath
         self.overwrite = overwrite
-        self.seen_interfaces: Set[str] = set()
+        self.prepared: PreparedInterfaces = {}
 
-    def parse(self, code: str) -> PreparedInterfaces:
-        interfaces: PreparedInterfaces = {}
-
+    def parse(self, code: str) -> None:
         queue = deque([astroid.parse(code)])
         while queue:
             current = queue.popleft()
@@ -66,7 +63,7 @@ class Parser:
                 )
                 continue
 
-            if current.name in self.seen_interfaces:
+            if current.name in self.prepared:
                 warnings.warn(
                     UserWarning(
                         f"Found duplicate interface with name {current.name}."
@@ -75,33 +72,35 @@ class Parser:
                 )
                 continue
 
-            self.seen_interfaces.add(current.name)
-            interfaces[current.name] = get_types_from_classdef(current)
-        return interfaces
+            self.prepared[current.name] = get_types_from_classdef(current)
 
-    def write(self, prepared: PreparedInterfaces) -> None:
+    def flush(self) -> str:
         serialized: List[str] = []
 
-        for interface, attributes in prepared.items():
-            serialized.append(f"interface {interface} {{\n")
+        for interface, attributes in self.prepared.items():
+            s = f"interface {interface} {{\n"
             for attribute_name, attribute_type in attributes.items():
-                serialized.append(f"    {attribute_name}: {attribute_type};\n")
-            serialized.append("}\n\n")
+                s += f"    {attribute_name}: {attribute_type};\n"
+            s += "}"
+            serialized.append(s)
 
-        if not serialized:
-            warnings.warn(UserWarning("Did not have anything to write to the file!"))
+        self.prepared.clear()
+        return "\n\n".join(serialized)
 
-        if self.overwrite or not os.path.isfile(self.outpath):
-            with open(self.outpath, "w") as f:
-                f.write(
-                    "// Generated using py-ts-interfaces.  "
-                    "See https://github.com/cs-cordero/py-ts-interfaces\n\n"
-                )
+        # if not serialized:
+        #     warnings.warn(UserWarning("Did not have anything to write to the file!"))
 
-        with open(self.outpath, "a") as f:
-            for line in serialized:
-                f.write(line)
-        print(f"Created {self.outpath}!")
+        # if self.overwrite or not os.path.isfile(self.outpath):
+        #     with open(self.outpath, "w") as f:
+        #         f.write(
+        #             "// Generated using py-ts-interfaces.  "
+        #             "See https://github.com/cs-cordero/py-ts-interfaces\n\n"
+        #         )
+
+        # with open(self.outpath, "a") as f:
+        #     for line in serialized:
+        #         f.write(line)
+        # print(f"Created {self.outpath}!")
 
 
 def get_types_from_classdef(node: astroid.ClassDef) -> Dict[str, str]:
