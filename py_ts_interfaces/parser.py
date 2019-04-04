@@ -1,6 +1,7 @@
 from collections import deque
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional, Set
 import astroid
+import os
 import warnings
 
 
@@ -28,12 +29,25 @@ SUBSCRIPT_FORMAT_MAP: Dict[str, str] = {
 }
 
 
+InterfaceAttributes = Dict[str, str]
+PreparedInterfaces = Dict[str, InterfaceAttributes]
+
+
 class Parser:
-    def __init__(self, interface_qualname: str, outpath: str = "interfaces.ts") -> None:
+    def __init__(
+        self,
+        interface_qualname: str,
+        outpath: str = "interfaces.ts",
+        overwrite: bool = True,
+    ) -> None:
         self.interface_qualname = interface_qualname
         self.outpath = outpath
+        self.overwrite = overwrite
+        self.seen_interfaces: Set[str] = set()
 
-    def parse(self, code: str) -> None:
+    def parse(self, code: str) -> PreparedInterfaces:
+        interfaces: PreparedInterfaces = {}
+
         queue = deque([astroid.parse(code)])
         while queue:
             current = queue.popleft()
@@ -52,24 +66,52 @@ class Parser:
                 )
                 continue
 
-            serialized_types = self.serialize_ast_node_annassigns_from_classdef(current)
-            # TODO: Test code
-            if serialized_types:
-                print()
-                print(f"interface {current.name} {{")
-                print("\n".join(f"    {k}: {v};" for k, v in serialized_types.items()))
-                print(f"}}\n")
-
-    def serialize_ast_node_annassigns_from_classdef(
-        self, node: astroid.ClassDef
-    ) -> Dict[str, str]:
-        serialized_types: Dict[str, str] = {}
-        for child in node.body:
-            if not isinstance(child, astroid.AnnAssign):
+            if current.name in self.seen_interfaces:
+                warnings.warn(
+                    UserWarning(
+                        f"Found duplicate interface with name {current.name}."
+                        "All interfaces after the first will be ignored"
+                    )
+                )
                 continue
-            child_name, child_type = parse_annassign_node(child)
-            serialized_types[child_name] = child_type
-        return serialized_types
+
+            self.seen_interfaces.add(current.name)
+            interfaces[current.name] = get_types_from_classdef(current)
+        return interfaces
+
+    def write(self, prepared: PreparedInterfaces) -> None:
+        serialized: List[str] = []
+
+        for interface, attributes in prepared.items():
+            serialized.append(f"interface {interface} {{\n")
+            for attribute_name, attribute_type in attributes.items():
+                serialized.append(f"    {attribute_name}: {attribute_type};\n")
+            serialized.append("}\n\n")
+
+        if not serialized:
+            warnings.warn(UserWarning("Did not have anything to write to the file!"))
+
+        if self.overwrite or not os.path.isfile(self.outpath):
+            with open(self.outpath, "w") as f:
+                f.write(
+                    "// Generated using py-ts-interfaces.  "
+                    "See https://github.com/cs-cordero/py-ts-interfaces\n\n"
+                )
+
+        with open(self.outpath, "a") as f:
+            for line in serialized:
+                f.write(line)
+        print(f"Created {self.outpath}!")
+
+
+def get_types_from_classdef(node: astroid.ClassDef) -> Dict[str, str]:
+    serialized_types: Dict[str, str] = {}
+    for child in node.body:
+        if not isinstance(child, astroid.AnnAssign):
+            continue
+        child_name, child_type = parse_annassign_node(child)
+        serialized_types[child_name] = child_type
+    return serialized_types
 
 
 class ParsedAnnAssign(NamedTuple):
