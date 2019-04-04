@@ -89,7 +89,9 @@ TEST_SIX = """
 )
 def test_parse(code, expected_call_count, interface_qualname):
     parser = Parser(interface_qualname)
-    with patch.object(parser, "serialize_ast_node_annassigns") as mock_writer:
+    with patch.object(
+        parser, "serialize_ast_node_annassigns_from_classdef"
+    ) as mock_writer:
         parser.parse(code=code)
         assert mock_writer.call_count == expected_call_count
 
