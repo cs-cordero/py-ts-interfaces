@@ -1,8 +1,9 @@
+*.egg-info/
 *.pyc
+.cache
+.coverage
+.mypy_cache
 .pytest_cache
+__pycache__
 build/
 dist/
-*.egg-info/
-.cache
-__pycache__
-.mypy_cache
