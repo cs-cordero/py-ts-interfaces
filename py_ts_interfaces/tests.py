@@ -1,4 +1,6 @@
+from astroid import extract_node
 from py_ts_interfaces import Interface, Parser
+from py_ts_interfaces.parser import parse_annassign_node
 from unittest.mock import patch
 import pytest
 
@@ -90,6 +92,40 @@ def test_parse(code, expected_call_count, interface_qualname):
     with patch.object(parser, "serialize_ast_node_annassigns") as mock_writer:
         parser.parse(code=code)
         assert mock_writer.call_count == expected_call_count
+
+
+@pytest.mark.parametrize(
+    "node, expected",
+    [
+        (extract_node("baz: str"), ("baz", "string")),
+        (extract_node("ace: int"), ("ace", "number")),
+        (extract_node("ace: float"), ("ace", "number")),
+        (extract_node("ace: complex"), ("ace", "number")),
+        (extract_node("ace: bool"), ("ace", "boolean")),
+        (extract_node("ace: Any"), ("ace", "any")),
+        (extract_node("foo: List"), ("foo", "Array<any>")),
+        (extract_node("bar: Tuple"), ("bar", "[any]")),
+        (extract_node("foo: List[str]"), ("foo", "Array<string>")),
+        (extract_node("bar: Tuple[str, int]"), ("bar", "[string, number]")),
+        (extract_node("baz: Optional[str]"), ("baz", "string | null")),
+        (extract_node("ace: Optional[int]"), ("ace", "number | null")),
+        (extract_node("ace: Optional[float]"), ("ace", "number | null")),
+        (extract_node("ace: Optional[complex]"), ("ace", "number | null")),
+        (extract_node("ace: Optional[bool]"), ("ace", "boolean | null")),
+        (extract_node("ace: Optional[Any]"), ("ace", "any | null")),
+        (
+            extract_node("bar: Optional[Tuple[str, int]]"),
+            ("bar", "[string, number] | null"),
+        ),
+        (
+            extract_node("bar: Tuple[List[Optional[Tuple[str, int]]], str, int]"),
+            ("bar", "[Array<[string, number] | null>, string, number]"),
+        ),
+        (extract_node("lol: Union[str, int, float]"), ("lol", "string | number")),
+    ],
+)
+def test_annassign_parser(node, expected):
+    assert parse_annassign_node(node) == expected
 
 
 @pytest.mark.parametrize("code", [TEST_SIX])

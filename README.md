@@ -113,26 +113,31 @@ So defining the types in Python guarantee that you can also express the whole
 interface in both languages.
 
 ## Supported Type Mappings
+Please note that usage of `T` `U` and `V` in the table below represent
+stand-ins for actual types.  They do not represent actually using generic typed
+variables.
 
-| Python         | Typescript |
-| -------------- | ---------- |
-| str            | string     |
-| int            | number     |
-| float          | number     |
-| complex        | number     |
-| bool           | boolean    |
-| List[str]      | string[]   |
-| Optional[str]  | ?: string  |
+| Python                          | Typescript                    |
+|:-------------------------------:|:-----------------------------:|
+| None                            | null                          |
+| str                             | string                        |
+| int                             | number                        |
+| float                           | number                        |
+| complex                         | number                        |
+| bool                            | boolean                       |
+| List                            | Array\<any\>                  |
+| Tuple                           | [any]                         |
+| List[T]                         | Array[T]                      |
+| Tuple[T, U]                     | [T, U]                        |
+| Optional[T]                     | T \| null                     |
+| Union[T, U, V]                  | T \| U \| V                   |
 
 ## Planned Supported Mappings
 
 * String literals
 * Union types
-* None => null
 * Undefined type
 * isNaN type
-* Tuples
-* Any => any
 * ReadOnly types
 * Excess Properties
 
