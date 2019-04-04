@@ -1,4 +1,5 @@
 from collections import deque
+from typing import Optional
 import astroid
 import warnings
 
@@ -12,12 +13,12 @@ class Interface:
     pass
 
 
-def has_dataclass_decorator(decorators: astroid.Decorators) -> bool:
+def has_dataclass_decorator(decorators: Optional[astroid.Decorators]) -> bool:
     if not decorators:
         return False
 
     return any(
-        decorator.func.name == "dataclass"
+        (getattr(decorator.func, 'name', None) == "dataclass")
         if isinstance(decorator, astroid.Call)
         else decorator.name == "dataclass"
         for decorator in decorators.nodes

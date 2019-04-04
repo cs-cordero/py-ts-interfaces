@@ -1,4 +1,4 @@
-from py2ts_interfaces import Interface, Parser
+from py_ts_interfaces import Interface, Parser
 from unittest.mock import patch
 import pytest
 
@@ -13,14 +13,14 @@ TEST_ONE = """
         pass
 """
 TEST_TWO = """
-    from py2ts_interfaces import Interface
+    from py_ts_interfaces import Interface
 
     class Foo(Interface):
         pass
 """
 TEST_THREE = """
     from dataclasses import dataclass
-    from py2ts_interfaces import Interface
+    from py_ts_interfaces import Interface
 
     @dataclass
     class Foo(Interface):
@@ -28,7 +28,7 @@ TEST_THREE = """
 """
 TEST_FOUR = """
     from dataclasses import dataclass
-    from py2ts_interfaces import Interface
+    from py_ts_interfaces import Interface
 
     @dataclass
     class Foo(Interface):
