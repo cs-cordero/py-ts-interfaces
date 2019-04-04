@@ -1,5 +1,6 @@
 from collections import deque
 import astroid
+import warnings
 
 
 def read_file(path: str) -> str:
@@ -11,25 +12,43 @@ class Interface:
     pass
 
 
+def has_dataclass_decorator(decorators: astroid.Decorators) -> bool:
+    if not decorators:
+        return False
+
+    return any(
+        decorator.func.name == "dataclass"
+        if isinstance(decorator, astroid.Call)
+        else decorator.name == "dataclass"
+        for decorator in decorators.nodes
+    )
+
+
 class Parser:
     def __init__(self, interface_qualname: str, outpath: str = "interfaces.ts") -> None:
-        self.interface = interface_qualname
+        self.interface_qualname = interface_qualname
         self.outpath = outpath
 
-    def parse(self, *, code: str) -> None:
+    def parse(self, code: str) -> None:
         queue = deque([astroid.parse(code)])
         while queue:
             current = queue.popleft()
             children = current.get_children()
-            if not isinstance(current, astroid.node_classes.ClassDef):
+            if not isinstance(current, astroid.ClassDef):
                 queue.extend(children)
                 continue
 
-            if not current.is_subtype_of(self.interface):
+            if not current.is_subtype_of(self.interface_qualname):
                 queue.extend(children)
+                continue
+
+            if not has_dataclass_decorator(current.decorators):
+                warnings.warn(
+                    UserWarning("Non-dataclasses are not supported, see documentation.")
+                )
                 continue
 
             self.write_ast_node_to_interface(current)
 
-    def write_ast_node_to_interface(self, node: astroid.node_classes.ClassDef) -> None:
+    def write_ast_node_to_interface(self, node: astroid.ClassDef) -> None:
         pass
