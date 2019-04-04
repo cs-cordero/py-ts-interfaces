@@ -18,7 +18,7 @@ def has_dataclass_decorator(decorators: Optional[astroid.Decorators]) -> bool:
         return False
 
     return any(
-        (getattr(decorator.func, 'name', None) == "dataclass")
+        (getattr(decorator.func, "name", None) == "dataclass")
         if isinstance(decorator, astroid.Call)
         else decorator.name == "dataclass"
         for decorator in decorators.nodes
