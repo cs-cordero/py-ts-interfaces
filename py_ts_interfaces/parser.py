@@ -33,15 +33,8 @@ PreparedInterfaces = Dict[str, InterfaceAttributes]
 
 
 class Parser:
-    def __init__(
-        self,
-        interface_qualname: str,
-        outpath: str = "interfaces.ts",
-        overwrite: bool = True,
-    ) -> None:
+    def __init__(self, interface_qualname: str) -> None:
         self.interface_qualname = interface_qualname
-        self.outpath = outpath
-        self.overwrite = overwrite
         self.prepared: PreparedInterfaces = {}
 
     def parse(self, code: str) -> None:
@@ -59,16 +52,15 @@ class Parser:
 
             if not has_dataclass_decorator(current.decorators):
                 warnings.warn(
-                    UserWarning("Non-dataclasses are not supported, see documentation.")
+                    "Non-dataclasses are not supported, see documentation.", UserWarning
                 )
                 continue
 
             if current.name in self.prepared:
                 warnings.warn(
-                    UserWarning(
-                        f"Found duplicate interface with name {current.name}."
-                        "All interfaces after the first will be ignored"
-                    )
+                    f"Found duplicate interface with name {current.name}."
+                    "All interfaces after the first will be ignored",
+                    UserWarning,
                 )
                 continue
 
@@ -85,22 +77,7 @@ class Parser:
             serialized.append(s)
 
         self.prepared.clear()
-        return "\n\n".join(serialized)
-
-        # if not serialized:
-        #     warnings.warn(UserWarning("Did not have anything to write to the file!"))
-
-        # if self.overwrite or not os.path.isfile(self.outpath):
-        #     with open(self.outpath, "w") as f:
-        #         f.write(
-        #             "// Generated using py-ts-interfaces.  "
-        #             "See https://github.com/cs-cordero/py-ts-interfaces\n\n"
-        #         )
-
-        # with open(self.outpath, "a") as f:
-        #     for line in serialized:
-        #         f.write(line)
-        # print(f"Created {self.outpath}!")
+        return "\n\n".join(serialized).strip()
 
 
 def get_types_from_classdef(node: astroid.ClassDef) -> Dict[str, str]:
