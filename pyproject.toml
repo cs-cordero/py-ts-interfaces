@@ -1,6 +1,6 @@
 [tool.poetry]
 name = 'py-ts-interfaces'
-version = '0.0.1'
+version = '0.1.0'
 description = 'A library that converts Python dataclasses with type annotations to a TypeScript interface and serializes them to a file.'
 license = 'MIT'
 authors = [
@@ -9,6 +9,7 @@ authors = [
 readme = 'README.md'
 respository = 'https://github.com/cs-cordero/py-ts-interfaces'
 homepage = 'https://github.com/cs-cordero/py-ts-interfaces'
+documentation = 'https://github.com/cs-cordero/py-ts-interfaces'
 keywords = ['python', 'typescript', 'interfaces']
 
 [tool.poetry.dependencies]
@@ -23,3 +24,6 @@ pytest = '^4.4'
 pytest-flake8 = '^1.0.4'
 pytest-mypy = '^0.3.2'
 pytest-cov = "^2.6"
+
+[tool.poetry.scripts]
+py-ts-interfaces = "py_ts_interfaces:scripts:main"
