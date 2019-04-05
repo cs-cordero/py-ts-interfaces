@@ -8,8 +8,6 @@ annotations to a TypeScript `interface` and serializes them to a file.
 
 ## Installation
 
-**This package has not yet been deployed to PyPI**
-
 ```
 python --version  # requires 3.7+
 pip install py-ts-interfaces
@@ -63,6 +61,12 @@ class WillNotGetPickedUp:  # this doesn't subclass Interface, so it won't be inc
 $ py-ts-interface views.py
 Created interface.ts!
 ```
+
+You may also use the following arguments:
+* `-o, --output [filepath]`:  where the file will be saved. default is `interface.ts`.
+* `-a, --append`:  by default each run will overwrite the output file. this flag
+allows only appends.  Be warned, duplicate interfaces are not tested.
+
 
 3. The resulting file will look like this:
 ```
@@ -135,7 +139,6 @@ variables.
 ## Planned Supported Mappings
 
 * String literals
-* Union types
 * Undefined type
 * isNaN type
 * ReadOnly types
@@ -159,4 +162,4 @@ moving back and forth from client to server.  Many of these features, whether th
 
 ## Author
 
-Christopher Sabater Cordero
+[Christopher Sabater Cordero](https://chrisdoescoding.com)
