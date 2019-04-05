@@ -26,4 +26,4 @@ pytest-mypy = '^0.3.2'
 pytest-cov = "^2.6"
 
 [tool.poetry.scripts]
-py-ts-interfaces = "py_ts_interfaces:scripts:main"
+py-ts-interfaces = "py_ts_interfaces.cli:main"
