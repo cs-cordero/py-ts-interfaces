@@ -36,6 +36,7 @@ class Parser:
     def __init__(self, interface_qualname: str) -> None:
         self.interface_qualname = interface_qualname
         self.prepared: PreparedInterfaces = {}
+        self._classdefs: Dict[str, astroid.ClassDef] = {}
 
     def parse(self, code: str) -> None:
         queue = deque([astroid.parse(code)])
@@ -55,6 +56,9 @@ class Parser:
                     "Non-dataclasses are not supported, see documentation.", UserWarning
                 )
                 continue
+            else:
+                self._classdefs.update({current.name: current})
+
 
             if current.name in self.prepared:
                 warnings.warn(
@@ -64,7 +68,7 @@ class Parser:
                 )
                 continue
 
-            self.prepared[current.name] = get_types_from_classdef(current)
+            self.prepared[current.name] = get_types_from_classdef(current, self._classdefs)
 
     def flush(self) -> str:
         serialized: List[str] = []
@@ -80,12 +84,12 @@ class Parser:
         return "\n\n".join(serialized).strip()
 
 
-def get_types_from_classdef(node: astroid.ClassDef) -> Dict[str, str]:
+def get_types_from_classdef(node: astroid.ClassDef, classdefs: Dict = {}) -> Dict[str, str]:
     serialized_types: Dict[str, str] = {}
     for child in node.body:
         if not isinstance(child, astroid.AnnAssign):
             continue
-        child_name, child_type = parse_annassign_node(child)
+        child_name, child_type = parse_annassign_node(child, classdefs)
         serialized_types[child_name] = child_type
     return serialized_types
 
@@ -95,11 +99,24 @@ class ParsedAnnAssign(NamedTuple):
     attr_type: str
 
 
-def parse_annassign_node(node: astroid.AnnAssign) -> ParsedAnnAssign:
-    def helper(node: astroid.node_classes.NodeNG) -> str:
+def parse_annassign_node(node: astroid.AnnAssign, classdefs: Dict = {}) -> ParsedAnnAssign:
+    def helper(node: astroid.node_classes.NodeNG, classdefs: Dict = {}) -> str:
         type_value = "UNKNOWN"
         if isinstance(node, astroid.Name):
-            type_value = TYPE_MAP[node.name]
+            type_value = TYPE_MAP.get(node.name, None)
+            if type_value == None:
+                classref = classdefs.get(node.name, None)
+                if classref == None:
+                    warnings.warn(
+                        UserWarning(
+                            "Couldn't map " + str(node.name) + " to a type or class-type."
+                        )
+                    )
+                    type_value = "UNKNOWN"
+                else:
+                    type_value = classref.name
+
+
             if node.name == "Union":
                 warnings.warn(
                     UserWarning(
@@ -137,7 +154,7 @@ def parse_annassign_node(node: astroid.AnnAssign) -> ParsedAnnAssign:
             delimiter = " | "
         return delimiter
 
-    return ParsedAnnAssign(node.target.name, helper(node.annotation))
+    return ParsedAnnAssign(node.target.name, helper(node.annotation, classdefs))
 
 
 def has_dataclass_decorator(decorators: Optional[astroid.Decorators]) -> bool:
