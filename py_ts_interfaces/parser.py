@@ -57,6 +57,7 @@ class Parser:
                 )
                 continue
             else:
+                print("Adding classdef " + current.name)
                 self._classdefs.update({current.name: current})
 
 
@@ -99,9 +100,10 @@ class ParsedAnnAssign(NamedTuple):
     attr_type: str
 
 
-def parse_annassign_node(node: astroid.AnnAssign, classdefs: Dict = {}) -> ParsedAnnAssign:
-    def helper(node: astroid.node_classes.NodeNG, classdefs: Dict = {}) -> str:
+def parse_annassign_node(node: astroid.AnnAssign, classdefs: Dict) -> ParsedAnnAssign:
+    def helper(node: astroid.node_classes.NodeNG, classdefs: Dict) -> str:
         type_value = "UNKNOWN"
+        
         if isinstance(node, astroid.Name):
             type_value = TYPE_MAP.get(node.name, None)
             if type_value == None:
@@ -110,6 +112,7 @@ def parse_annassign_node(node: astroid.AnnAssign, classdefs: Dict = {}) -> Parse
                     warnings.warn(
                         UserWarning(
                             "Couldn't map " + str(node.name) + " to a type or class-type."
+                            " Existing class-defs: " + str(classdefs)
                         )
                     )
                     type_value = "UNKNOWN"
@@ -127,20 +130,20 @@ def parse_annassign_node(node: astroid.AnnAssign, classdefs: Dict = {}) -> Parse
         elif isinstance(node, astroid.Subscript):
             subscript_value = node.value
             type_format = SUBSCRIPT_FORMAT_MAP[subscript_value.name]
-            type_value = type_format % helper(node.slice.value)
+            type_value = type_format % helper(node.slice.value, classdefs)
         elif isinstance(node, astroid.Tuple):
-            inner_types = get_inner_tuple_types(node)
+            inner_types = get_inner_tuple_types(node, classdefs)
             delimiter = get_inner_tuple_delimiter(node)
             if delimiter != "UNKNOWN":
                 type_value = delimiter.join(inner_types)
 
         return type_value
 
-    def get_inner_tuple_types(tuple_node: astroid.Tuple) -> List[str]:
+    def get_inner_tuple_types(tuple_node: astroid.Tuple, classdefs: Dict) -> List[str]:
         # avoid using Set to keep order
         inner_types: List[str] = []
         for child in tuple_node.get_children():
-            child_type = helper(child)
+            child_type = helper(child, classdefs)
             if child_type not in inner_types:
                 inner_types.append(child_type)
         return inner_types
