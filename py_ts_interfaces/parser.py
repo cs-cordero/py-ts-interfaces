@@ -112,7 +112,7 @@ def parse_annassign_node(node: astroid.AnnAssign, classdefs: Dict) -> ParsedAnnA
                     warnings.warn(
                         UserWarning(
                             "Couldn't map " + str(node.name) + " to a type or class-type."
-                            " Existing class-defs: " + str(classdefs)
+                            " Existing class-defs: " + str(classdefs.keys())
                         )
                     )
                     type_value = "UNKNOWN"
