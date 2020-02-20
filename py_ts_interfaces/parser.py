@@ -57,7 +57,7 @@ class Parser:
                 )
                 continue
             else:
-                print("Adding classdef " + current.name)
+                #print("Adding classdef " + current.name)
                 self._classdefs.update({current.name: current})
 
 
