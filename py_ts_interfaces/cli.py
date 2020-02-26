@@ -1,9 +1,10 @@
-from collections import deque
-from py_ts_interfaces import Interface, Parser
-from typing import Iterable, List, Set
 import argparse
 import os
 import warnings
+from collections import deque
+from typing import Iterable, List, Set
+
+from py_ts_interfaces import Interface, Parser
 
 
 def main() -> None:

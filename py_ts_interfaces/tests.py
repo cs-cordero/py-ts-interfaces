@@ -1,9 +1,11 @@
-from astroid import extract_node
 from itertools import count
-from py_ts_interfaces import Interface, Parser
-from py_ts_interfaces.parser import parse_annassign_node, get_types_from_classdef
 from unittest.mock import patch
+
 import pytest
+from astroid import extract_node
+
+from py_ts_interfaces import Interface, Parser
+from py_ts_interfaces.parser import get_types_from_classdef, parse_annassign_node
 
 
 @pytest.fixture(scope="module")
@@ -69,8 +71,8 @@ TEST_SIX = """
     from dataclasses import dataclass
     from py_ts_interfaces import Interface
 
-    @dataclass  #@
-    class Foo(Interface):
+    @dataclass
+    class Foo(Interface):  #@
         aaa: str
         bbb: int
         ccc: bool
