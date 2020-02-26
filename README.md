@@ -1,6 +1,10 @@
 # py-ts-interfaces
 ### Python to TypeScript Interfaces
 
+![MIT License](https://img.shields.io/github/license/cs-cordero/py-ts-interfaces)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/cs-cordero/py-ts-interfaces/Continuous%20Integration)
+![PyPI](https://img.shields.io/pypi/v/py-ts-interfaces)
+
 ## What is this?
 
 This library provides utilities that convert Python dataclasses with type
