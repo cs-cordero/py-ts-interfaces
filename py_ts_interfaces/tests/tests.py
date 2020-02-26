@@ -6,11 +6,15 @@ from astroid import extract_node
 
 from py_ts_interfaces import Interface, Parser
 from py_ts_interfaces.parser import get_types_from_classdef, parse_annassign_node
+from py_ts_interfaces.tests import utils
 
 
 @pytest.fixture(scope="module")
 def interface_qualname():
     return f"{Interface.__module__}.{Interface.__qualname__}"
+
+
+PYTHON_VERSION = utils.get_version()
 
 
 TEST_ONE = """
@@ -67,33 +71,64 @@ TEST_FIVE = """
     class Bar(Interface):
         pass
 """
-TEST_SIX = """
-    from dataclasses import dataclass
-    from py_ts_interfaces import Interface
 
-    @dataclass
-    class Foo(Interface):  #@
-        aaa: str
-        bbb: int
-        ccc: bool
-        ddd = 100
+if PYTHON_VERSION < 3.8:
+    TEST_SIX = """
+        from dataclasses import dataclass
+        from py_ts_interfaces import Interface
 
-        def foo(self) -> None:
-            pass
-"""
-TEST_SEVEN = """
-    from dataclasses import dataclass
-    from py_ts_interfaces import Interface
+        @dataclass  #@
+        class Foo(Interface):
+            aaa: str
+            bbb: int
+            ccc: bool
+            ddd = 100
 
-    @dataclass  #@
-    class Foo(Interface):
-        def foo(self) -> None:
-            pass
+            def foo(self) -> None:
+                pass
+    """
+    TEST_SEVEN = """
+        from dataclasses import dataclass
+        from py_ts_interfaces import Interface
 
-        aaa: str = 'hello'
-        bbb: int = 5
-        ccc: bool = True
-"""
+        @dataclass  #@
+        class Foo(Interface):
+            def foo(self) -> None:
+                pass
+
+            aaa: str = 'hello'
+            bbb: int = 5
+            ccc: bool = True
+    """
+else:
+    TEST_SIX = """
+        from dataclasses import dataclass
+        from py_ts_interfaces import Interface
+
+        @dataclass
+        class Foo(Interface):  #@
+            aaa: str
+            bbb: int
+            ccc: bool
+            ddd = 100
+
+            def foo(self) -> None:
+                pass
+    """
+    TEST_SEVEN = """
+        from dataclasses import dataclass
+        from py_ts_interfaces import Interface
+
+        @dataclass
+        class Foo(Interface):  #@
+            def foo(self) -> None:
+                pass
+
+            aaa: str = 'hello'
+            bbb: int = 5
+            ccc: bool = True
+    """
+
 TEST_EIGHT = """
     from dataclasses import dataclass
     from py_ts_interfaces import Interface
@@ -180,7 +215,7 @@ def test_parse_annassign_node(node, expected):
     assert parse_annassign_node(node) == expected
 
 
-@pytest.mark.parametrize("code, expected_call_count", [(TEST_SIX, 0)])
+@pytest.mark.parametrize("code, expected_call_count", [(TEST_SIX, 0), (TEST_SEVEN, 0)])
 def test_get_types_from_classdef(code, expected_call_count):
     classdef = extract_node(code)
     with patch("py_ts_interfaces.parser.parse_annassign_node") as annassign_parser:

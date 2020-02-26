@@ -24,8 +24,8 @@ def main() -> None:
     if not args.should_append or not os.path.isfile(args.outpath):
         with open(args.outpath, "w") as f:
             f.write(
-                "// Generated using py-ts-interfaces.  "
-                "See https://github.com/cs-cordero/py-ts-interfaces\n\n"
+                "// Generated using py-ts-interfaces.\n"
+                "// See https://github.com/cs-cordero/py-ts-interfaces\n\n"
             )
             f.write(result)
         print(f"Created {args.outpath}!")
