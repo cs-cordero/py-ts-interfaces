@@ -24,4 +24,5 @@ jobs:
         poetry install
     - name: Run test suite
       run: |
+        poetry shell
         ./run_tests.sh
