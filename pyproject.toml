@@ -7,23 +7,22 @@ authors = [
     'Christopher Cordero <ccordero@protonmail.com>'
 ]
 readme = 'README.md'
-respository = 'https://github.com/cs-cordero/py-ts-interfaces'
+repository = 'https://github.com/cs-cordero/py-ts-interfaces'
 homepage = 'https://github.com/cs-cordero/py-ts-interfaces'
 documentation = 'https://github.com/cs-cordero/py-ts-interfaces'
 keywords = ['python', 'typescript', 'interfaces']
 
 [tool.poetry.dependencies]
 python = '^3.7'
-astroid = '2.2.5'
+astroid = '^2.3.3'
 
 [tool.poetry.dev-dependencies]
-black = '^19.3b0'
-flake8 = '^3.7.7'
-mypy = '^0.700'
-pytest = '^4.4'
-pytest-flake8 = '^1.0.4'
-pytest-mypy = '^0.3.2'
-pytest-cov = "^2.6"
+black = '^19.10b0'
+flake8 = '^3.7.9'
+mypy = '^0.761'
+pytest-cov = '^2.8'
+pytest = "^5.3.5"
+isort = "^4.3.21"
 
 [tool.poetry.scripts]
 py-ts-interfaces = "py_ts_interfaces.cli:main"
