@@ -1,2 +1,4 @@
-from .parser import Interface as Interface, Parser as Parser
 import collections
+
+from .parser import Interface as Interface
+from .parser import Parser as Parser
