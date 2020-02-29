@@ -1,7 +1,8 @@
+import warnings
 from collections import deque
 from typing import Dict, List, NamedTuple, Optional
+
 import astroid
-import warnings
 
 
 class Interface:
