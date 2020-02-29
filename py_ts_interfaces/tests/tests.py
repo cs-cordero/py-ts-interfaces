@@ -142,6 +142,46 @@ TEST_EIGHT = """
         bbb: int
 """
 
+TEST_NINE = """
+    from dataclasses import dataclass
+    from py_ts_interfaces import Interface
+
+    @dataclass
+    class Foo(Interface):
+        aaa: str
+
+    @dataclass
+    class Bar(Interface):
+        bbb: int
+        foo: Foo
+"""
+
+TEST_TEN = """
+    from dataclasses import dataclass
+    from py_ts_interfaces import Interface
+
+    @dataclass
+    class One(Interface):
+        aaa: str
+
+    @dataclass
+    class Two(Interface):
+        bbb: int
+        one: One
+    
+    @dataclass
+    class Three(Interface):
+        bbb: int
+        two: Two
+
+    @dataclass
+    class All(Interface):
+        bbb: int
+        one: One
+        two: Two
+        three: Three
+"""
+
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
@@ -153,6 +193,8 @@ TEST_EIGHT = """
         (TEST_FOUR, 3),
         (TEST_FIVE, 0),
         (TEST_EIGHT, 1),
+        (TEST_NINE, 1),
+        (TEST_TEN, 3),
     ],
 )
 def test_parser_parse(code, expected_call_count, interface_qualname):

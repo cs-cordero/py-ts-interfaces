@@ -58,9 +58,7 @@ class Parser:
                 )
                 continue
             else:
-                #print("Adding classdef " + current.name)
                 self._classdefs.update({current.name: current})
-
 
             if current.name in self.prepared:
                 warnings.warn(
@@ -87,7 +85,7 @@ class Parser:
 
 
 def get_types_from_classdef(node: astroid.ClassDef, classdefs: Optional[Dict[str, astroid.ClassDef]] = None) -> Dict[str, str]:
-    if classdefs is None: 
+    if classdefs is None:
         classdefs = {}
     assert classdefs is not None
 
@@ -111,17 +109,16 @@ def parse_annassign_node(node: astroid.AnnAssign, classdefs: Optional[Dict[str, 
     assert classdefs is not None
 
     def helper(node: astroid.node_classes.NodeNG, classdefs: Optional[Dict[str, astroid.ClassDef]] = None) -> str:
-        if classdefs is None: #This shouldn't be None since it is called from within parse_annassign_node(...) which checks the value of classdefs, but check just in case.
+        if classdefs is None:  # This shouldn't be None since it is called from within parse_annassign_node(...) which checks the value of classdefs, but check just in case.
             classdefs = {}
         assert classdefs is not None
-
-        type_value = "UNKNOWN"
-        
+        type_value = "UNKNOWN"      
+          
         if isinstance(node, astroid.Name):
-            type_value = TYPE_MAP.get(node.name, None)
-            if type_value == None:
-                classref = classdefs.get(node.name, None)
-                if classref == None:
+            type_value = TYPE_MAP.get(node.name, '')
+            if type_value is '':
+                classref = classdefs.get(node.name, '')
+                if classref is '':
                     warnings.warn(
                         UserWarning(
                             "Couldn't map " + str(node.name) + " to a type or class-type."
