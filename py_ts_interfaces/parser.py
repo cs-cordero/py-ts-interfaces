@@ -85,7 +85,11 @@ class Parser:
         return "\n\n".join(serialized).strip()
 
 
-def get_types_from_classdef(node: astroid.ClassDef, classdefs: Dict = {}) -> Dict[str, str]:
+def get_types_from_classdef(node: astroid.ClassDef, classdefs: Optional[Dict[str, astroid.ClassDef]] = None) -> Dict[str, str]:
+    if classdefs is None: 
+        classdefs = {}
+    assert classdefs is not None
+
     serialized_types: Dict[str, str] = {}
     for child in node.body:
         if not isinstance(child, astroid.AnnAssign):
@@ -100,8 +104,16 @@ class ParsedAnnAssign(NamedTuple):
     attr_type: str
 
 
-def parse_annassign_node(node: astroid.AnnAssign, classdefs: Dict) -> ParsedAnnAssign:
-    def helper(node: astroid.node_classes.NodeNG, classdefs: Dict) -> str:
+def parse_annassign_node(node: astroid.AnnAssign, classdefs: Optional[Dict[str, astroid.ClassDef]] = None) -> ParsedAnnAssign:
+    if classdefs is None:
+        classdefs = {}
+    assert classdefs is not None
+
+    def helper(node: astroid.node_classes.NodeNG, classdefs: Optional[Dict[str, astroid.ClassDef]] = None) -> str:
+        if classdefs is None: #This shouldn't be None since it is called from within parse_annassign_node(...) which checks the value of classdefs, but check just in case.
+            classdefs = {}
+        assert classdefs is not None
+
         type_value = "UNKNOWN"
         
         if isinstance(node, astroid.Name):
@@ -139,7 +151,11 @@ def parse_annassign_node(node: astroid.AnnAssign, classdefs: Dict) -> ParsedAnnA
 
         return type_value
 
-    def get_inner_tuple_types(tuple_node: astroid.Tuple, classdefs: Dict) -> List[str]:
+    def get_inner_tuple_types(tuple_node: astroid.Tuple, classdefs: Optional[Dict[str, astroid.ClassDef]] = None) -> List[str]:
+        if classdefs is None: #This shouldn't be None since it is called from within parse_annassign_node(...) which checks the value of classdefs, but check just in case.
+            classdefs = {}
+        assert classdefs is not None
+
         # avoid using Set to keep order
         inner_types: List[str] = []
         for child in tuple_node.get_children():
