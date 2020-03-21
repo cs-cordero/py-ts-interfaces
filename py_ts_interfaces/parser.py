@@ -57,8 +57,8 @@ class Parser:
                     "Non-dataclasses are not supported, see documentation.", UserWarning
                 )
                 continue
-            else:
-                self._classdefs.update({current.name: current})
+
+            self._classdefs.update({current.name: current})
 
             if current.name in self.prepared:
                 warnings.warn(
@@ -68,7 +68,9 @@ class Parser:
                 )
                 continue
 
-            self.prepared[current.name] = get_types_from_classdef(current, self._classdefs)
+            self.prepared[current.name] = get_types_from_classdef(
+                current, self._classdefs
+            )
 
     def flush(self) -> str:
         serialized: List[str] = []
@@ -84,7 +86,9 @@ class Parser:
         return "\n\n".join(serialized).strip()
 
 
-def get_types_from_classdef(node: astroid.ClassDef, classdefs: Optional[Dict[str, astroid.ClassDef]] = None) -> Dict[str, str]:
+def get_types_from_classdef(
+    node: astroid.ClassDef, classdefs: Optional[Dict[str, astroid.ClassDef]] = None
+) -> Dict[str, str]:
     if classdefs is None:
         classdefs = {}
     assert classdefs is not None
@@ -103,32 +107,40 @@ class ParsedAnnAssign(NamedTuple):
     attr_type: str
 
 
-def parse_annassign_node(node: astroid.AnnAssign, classdefs: Optional[Dict[str, astroid.ClassDef]] = None) -> ParsedAnnAssign:
+def parse_annassign_node(
+    node: astroid.AnnAssign, classdefs: Optional[Dict[str, astroid.ClassDef]] = None
+) -> ParsedAnnAssign:
     if classdefs is None:
         classdefs = {}
     assert classdefs is not None
 
-    def helper(node: astroid.node_classes.NodeNG, classdefs: Optional[Dict[str, astroid.ClassDef]] = None) -> str:
-        if classdefs is None:  # This shouldn't be None since it is called from within parse_annassign_node(...) which checks the value of classdefs, but check just in case.
+    def helper(
+        node: astroid.node_classes.NodeNG,
+        classdefs: Optional[Dict[str, astroid.ClassDef]] = None,
+    ) -> str:
+        if classdefs is None:
+            # This shouldn't be None since it is called from within
+            # parse_annassign_node(...) which checks the value of classdefs,
+            # but check just in case.
             classdefs = {}
         assert classdefs is not None
-        type_value = "UNKNOWN"      
-          
+        type_value = "UNKNOWN"
+
         if isinstance(node, astroid.Name):
-            type_value = TYPE_MAP.get(node.name, '')
-            if type_value is '':
-                classref = classdefs.get(node.name, '')
-                if classref is '':
+            type_value = TYPE_MAP.get(node.name, "")
+            if not type_value:
+                classref = classdefs.get(node.name)
+                if not classref:
                     warnings.warn(
                         UserWarning(
-                            "Couldn't map " + str(node.name) + " to a type or class-type."
-                            " Existing class-defs: " + str(classdefs.keys())
+                            f"Couldn't map {str(node.name)} to a type or class-type."
+                            f" Existing class-defs: {str(classdefs.keys())}"
                         )
                     )
                     type_value = "UNKNOWN"
                 else:
+                    assert classref is not None
                     type_value = classref.name
-
 
             if node.name == "Union":
                 warnings.warn(
@@ -149,8 +161,14 @@ def parse_annassign_node(node: astroid.AnnAssign, classdefs: Optional[Dict[str, 
 
         return type_value
 
-    def get_inner_tuple_types(tuple_node: astroid.Tuple, classdefs: Optional[Dict[str, astroid.ClassDef]] = None) -> List[str]:
-        if classdefs is None: #This shouldn't be None since it is called from within parse_annassign_node(...) which checks the value of classdefs, but check just in case.
+    def get_inner_tuple_types(
+        tuple_node: astroid.Tuple,
+        classdefs: Optional[Dict[str, astroid.ClassDef]] = None,
+    ) -> List[str]:
+        if classdefs is None:
+            # This shouldn't be None since it is called from within
+            # parse_annassign_node(...) which checks the value of classdefs,
+            # but check just in case.
             classdefs = {}
         assert classdefs is not None
 

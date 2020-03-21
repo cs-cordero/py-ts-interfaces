@@ -168,7 +168,7 @@ TEST_TEN = """
     class Two(Interface):
         bbb: int
         one: One
-    
+
     @dataclass
     class Three(Interface):
         bbb: int
