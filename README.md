@@ -62,7 +62,7 @@ class WillNotGetPickedUp:  # this doesn't subclass Interface, so it won't be inc
    directory you want to use.  By default it will output to a file in your
    directory called interface.ts
 ```
-$ py-ts-interface views.py
+$ py-ts-interfaces views.py
 Created interface.ts!
 ```
 
