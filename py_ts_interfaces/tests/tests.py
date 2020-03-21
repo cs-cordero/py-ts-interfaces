@@ -188,22 +188,6 @@ TEST_TEN = """
         three: Three
 """
 
-TEST_ELEVEN = """
-    from __future__ import annotations
-
-    from dataclasses import dataclass
-    from py_ts_interfaces import Interface
-
-    @dataclass
-    class Bar(Interface):
-        bbb: int
-        foo: Foo
-
-    @dataclass
-    class Foo(Interface):
-        aaa: str
-"""
-
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
