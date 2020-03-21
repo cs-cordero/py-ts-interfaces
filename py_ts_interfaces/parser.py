@@ -1,11 +1,15 @@
 import warnings
 from collections import deque
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional, Union
 
 import astroid
 
 
 class Interface:
+    pass
+
+
+class PossibleInterfaceReference(str):
     pass
 
 
@@ -66,6 +70,7 @@ class Parser:
                 continue
 
             self.prepared[current.name] = get_types_from_classdef(current)
+        ensure_possible_interface_references_valid(self.prepared)
 
     def flush(self) -> str:
         serialized: List[str] = []
@@ -97,21 +102,41 @@ class ParsedAnnAssign(NamedTuple):
 
 
 def parse_annassign_node(node: astroid.AnnAssign) -> ParsedAnnAssign:
-    def helper(node: astroid.node_classes.NodeNG) -> str:
+    def helper(
+        node: astroid.node_classes.NodeNG,
+    ) -> Union[str, PossibleInterfaceReference]:
         type_value = "UNKNOWN"
+
         if isinstance(node, astroid.Name):
-            type_value = TYPE_MAP[node.name]
+            # When the node is of an astroid.Name type, it could have a
+            # name that exists in our TYPE_MAP, it could have a name that
+            # refers to another class previously defined in the source, or
+            # it could be a forward reference to a class that has yet to
+            # be parsed.
+            # We will have to assume it is a valid forward reference now and
+            # then just double check that it does indeed reference another
+            # Interface class as a post-parse step.
+            type_value = TYPE_MAP.get(node.name, PossibleInterfaceReference(node.name))
             if node.name == "Union":
                 warnings.warn(
-                    UserWarning(
-                        "Came across an annotation for Union without any indexed types!"
-                        " Coercing the annotation to any."
-                    )
+                    "Came across an annotation for Union without any indexed types!"
+                    " Coercing the annotation to any.",
+                    UserWarning,
                 )
+
+        elif isinstance(node, astroid.Const) and node.name == "str":
+            # When the node is of an astroid.Const type, it could be one of
+            # num, str, bool, None, or bytes.
+            # If it is Const.str, then it is possible that the value is a
+            # reference to a class previously defined in the source or it could
+            # be a forward reference to a class that has yet to be parsed.
+            type_value = PossibleInterfaceReference(node.value)
+
         elif isinstance(node, astroid.Subscript):
             subscript_value = node.value
             type_format = SUBSCRIPT_FORMAT_MAP[subscript_value.name]
             type_value = type_format % helper(node.slice.value)
+
         elif isinstance(node, astroid.Tuple):
             inner_types = get_inner_tuple_types(node)
             delimiter = get_inner_tuple_delimiter(node)
@@ -151,3 +176,19 @@ def has_dataclass_decorator(decorators: Optional[astroid.Decorators]) -> bool:
         else decorator.name == "dataclass"
         for decorator in decorators.nodes
     )
+
+
+def ensure_possible_interface_references_valid(interfaces: PreparedInterfaces) -> None:
+    interface_names = set(interfaces.keys())
+
+    for interface, attributes in interfaces.items():
+        for attribute_name, attribute_type in attributes.items():
+            if not isinstance(attribute_type, PossibleInterfaceReference):
+                continue
+
+            if attribute_type not in interface_names:
+                raise RuntimeError(
+                    f"Invalid nested Interface reference '{attribute_type}'"
+                    f" found for interface {interface}!\n"
+                    f"Does '{attribute_type}' exist and is it an Interface?"
+                )

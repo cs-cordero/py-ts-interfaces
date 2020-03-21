@@ -1,3 +1,4 @@
+from copy import deepcopy
 from itertools import count
 from unittest.mock import patch
 
@@ -5,7 +6,12 @@ import pytest
 from astroid import extract_node
 
 from py_ts_interfaces import Interface, Parser
-from py_ts_interfaces.parser import get_types_from_classdef, parse_annassign_node
+from py_ts_interfaces.parser import (
+    PossibleInterfaceReference,
+    ensure_possible_interface_references_valid,
+    get_types_from_classdef,
+    parse_annassign_node,
+)
 from py_ts_interfaces.tests import utils
 
 
@@ -142,6 +148,46 @@ TEST_EIGHT = """
         bbb: int
 """
 
+TEST_NINE = """
+    from dataclasses import dataclass
+    from py_ts_interfaces import Interface
+
+    @dataclass
+    class Foo(Interface):
+        aaa: str
+
+    @dataclass
+    class Bar(Interface):
+        bbb: int
+        foo: Foo
+"""
+
+TEST_TEN = """
+    from dataclasses import dataclass
+    from py_ts_interfaces import Interface
+
+    @dataclass
+    class One(Interface):
+        aaa: str
+
+    @dataclass
+    class Two(Interface):
+        bbb: int
+        one: One
+
+    @dataclass
+    class Three(Interface):
+        bbb: int
+        two: Two
+
+    @dataclass
+    class All(Interface):
+        bbb: int
+        one: One
+        two: Two
+        three: Three
+"""
+
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
@@ -153,6 +199,8 @@ TEST_EIGHT = """
         (TEST_FOUR, 3),
         (TEST_FIVE, 0),
         (TEST_EIGHT, 1),
+        (TEST_NINE, 2),
+        (TEST_TEN, 4),
     ],
 )
 def test_parser_parse(code, expected_call_count, interface_qualname):
@@ -171,6 +219,11 @@ def test_parser_parse(code, expected_call_count, interface_qualname):
             """interface abc {\n    def: ghi;\n    jkl: mno;\n}""",
         ),
         ({"abc": {}}, """interface abc {\n}"""),
+        (
+            {"abc": {"def": PossibleInterfaceReference("ghi")}, "ghi": {"jkl": "mno"}},
+            """interface abc {\n    def: ghi;\n}\n\n"""
+            """interface ghi {\n    jkl: mno;\n}""",
+        ),
     ],
 )
 def test_parser_flush(prepared_mocks, expected, interface_qualname):
@@ -209,6 +262,15 @@ def test_parser_flush(prepared_mocks, expected, interface_qualname):
         ),
         (extract_node("lol: Union[str, int, float]"), ("lol", "string | number")),
         (extract_node("lol: Union"), ("lol", "any")),
+        (
+            extract_node("whatever: 'StringForward'"),
+            ("whatever", PossibleInterfaceReference("StringForward")),
+        ),
+        (
+            extract_node("whatever: NakedReference"),
+            ("whatever", PossibleInterfaceReference("NakedReference")),
+        ),
+        (extract_node("whatever: 1234"), ("whatever", "UNKNOWN")),
     ],
 )
 def test_parse_annassign_node(node, expected):
@@ -224,3 +286,35 @@ def test_get_types_from_classdef(code, expected_call_count):
         result = get_types_from_classdef(classdef)
         assert result == {"0": "1", "2": "3", "4": "5"}
         assert annassign_parser.call_count == 3
+
+
+@pytest.mark.parametrize(
+    "interfaces",
+    [
+        {"interfaceA": {"name": "str"}, "interfaceB": {"another_name": "int"}},
+        {
+            "interfaceA": {"name": PossibleInterfaceReference("interfaceB")},
+            "interfaceB": {"another_name": "int"},
+        },
+        {"interfaceA": {"name": PossibleInterfaceReference("interfaceA")}},
+    ],
+)
+def test_ensure_possible_interface_references_valid__succeeds(interfaces):
+    copied_interfaces = deepcopy(interfaces)
+    ensure_possible_interface_references_valid(interfaces)
+    assert copied_interfaces == interfaces  # Make sure no mutations occurred
+
+
+@pytest.mark.parametrize(
+    "interfaces",
+    [
+        {
+            "interfaceA": {"name": PossibleInterfaceReference("interfaceB")},
+            "interfaceB": {"another_name": PossibleInterfaceReference("interfaceC")},
+        },
+        {"interfaceA": {"name": PossibleInterfaceReference("interfaceB")}},
+    ],
+)
+def test_ensure_possible_interface_references_valid__fails(interfaces):
+    with pytest.raises(RuntimeError):
+        ensure_possible_interface_references_valid(interfaces)
