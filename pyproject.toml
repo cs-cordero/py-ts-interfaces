@@ -1,6 +1,6 @@
 [tool.poetry]
 name = 'py-ts-interfaces'
-version = '0.2.0'
+version = '0.3.0'
 description = 'A library that converts Python dataclasses with type annotations to a TypeScript interface and serializes them to a file.'
 license = 'MIT'
 authors = [
