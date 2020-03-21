@@ -1,11 +1,15 @@
 import warnings
 from collections import deque
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional, Union
 
 import astroid
 
 
 class Interface:
+    pass
+
+
+class PossibleInterfaceReference(str):
     pass
 
 
@@ -37,7 +41,6 @@ class Parser:
     def __init__(self, interface_qualname: str) -> None:
         self.interface_qualname = interface_qualname
         self.prepared: PreparedInterfaces = {}
-        self._classdefs: Dict[str, astroid.ClassDef] = {}
 
     def parse(self, code: str) -> None:
         queue = deque([astroid.parse(code)])
@@ -58,8 +61,6 @@ class Parser:
                 )
                 continue
 
-            self._classdefs.update({current.name: current})
-
             if current.name in self.prepared:
                 warnings.warn(
                     f"Found duplicate interface with name {current.name}."
@@ -68,9 +69,8 @@ class Parser:
                 )
                 continue
 
-            self.prepared[current.name] = get_types_from_classdef(
-                current, self._classdefs
-            )
+            self.prepared[current.name] = get_types_from_classdef(current)
+        ensure_possible_interface_references_valid(self.prepared)
 
     def flush(self) -> str:
         serialized: List[str] = []
@@ -86,18 +86,12 @@ class Parser:
         return "\n\n".join(serialized).strip()
 
 
-def get_types_from_classdef(
-    node: astroid.ClassDef, classdefs: Optional[Dict[str, astroid.ClassDef]] = None
-) -> Dict[str, str]:
-    if classdefs is None:
-        classdefs = {}
-    assert classdefs is not None
-
+def get_types_from_classdef(node: astroid.ClassDef) -> Dict[str, str]:
     serialized_types: Dict[str, str] = {}
     for child in node.body:
         if not isinstance(child, astroid.AnnAssign):
             continue
-        child_name, child_type = parse_annassign_node(child, classdefs)
+        child_name, child_type = parse_annassign_node(child)
         serialized_types[child_name] = child_type
     return serialized_types
 
@@ -107,75 +101,55 @@ class ParsedAnnAssign(NamedTuple):
     attr_type: str
 
 
-def parse_annassign_node(
-    node: astroid.AnnAssign, classdefs: Optional[Dict[str, astroid.ClassDef]] = None
-) -> ParsedAnnAssign:
-    if classdefs is None:
-        classdefs = {}
-    assert classdefs is not None
-
+def parse_annassign_node(node: astroid.AnnAssign) -> ParsedAnnAssign:
     def helper(
         node: astroid.node_classes.NodeNG,
-        classdefs: Optional[Dict[str, astroid.ClassDef]] = None,
-    ) -> str:
-        if classdefs is None:
-            # This shouldn't be None since it is called from within
-            # parse_annassign_node(...) which checks the value of classdefs,
-            # but check just in case.
-            classdefs = {}
-        assert classdefs is not None
+    ) -> Union[str, PossibleInterfaceReference]:
         type_value = "UNKNOWN"
 
         if isinstance(node, astroid.Name):
-            type_value = TYPE_MAP.get(node.name, "")
-            if not type_value:
-                classref = classdefs.get(node.name)
-                if not classref:
-                    warnings.warn(
-                        UserWarning(
-                            f"Couldn't map {str(node.name)} to a type or class-type."
-                            f" Existing class-defs: {str(classdefs.keys())}"
-                        )
-                    )
-                    type_value = "UNKNOWN"
-                else:
-                    assert classref is not None
-                    type_value = classref.name
-
+            # When the node is of an astroid.Name type, it could have a
+            # name that exists in our TYPE_MAP, it could have a name that
+            # refers to another class previously defined in the source, or
+            # it could be a forward reference to a class that has yet to
+            # be parsed.
+            # We will have to assume it is a valid forward reference now and
+            # then just double check that it does indeed reference another
+            # Interface class as a post-parse step.
+            type_value = TYPE_MAP.get(node.name, PossibleInterfaceReference(node.name))
             if node.name == "Union":
                 warnings.warn(
-                    UserWarning(
-                        "Came across an annotation for Union without any indexed types!"
-                        " Coercing the annotation to any."
-                    )
+                    "Came across an annotation for Union without any indexed types!"
+                    " Coercing the annotation to any.",
+                    UserWarning,
                 )
+
+        elif isinstance(node, astroid.Const) and node.name == "str":
+            # When the node is of an astroid.Const type, it could be one of
+            # num, str, bool, None, or bytes.
+            # If it is Const.str, then it is possible that the value is a
+            # reference to a class previously defined in the source or it could
+            # be a forward reference to a class that has yet to be parsed.
+            type_value = PossibleInterfaceReference(node.value)
+
         elif isinstance(node, astroid.Subscript):
             subscript_value = node.value
             type_format = SUBSCRIPT_FORMAT_MAP[subscript_value.name]
-            type_value = type_format % helper(node.slice.value, classdefs)
+            type_value = type_format % helper(node.slice.value)
+
         elif isinstance(node, astroid.Tuple):
-            inner_types = get_inner_tuple_types(node, classdefs)
+            inner_types = get_inner_tuple_types(node)
             delimiter = get_inner_tuple_delimiter(node)
             if delimiter != "UNKNOWN":
                 type_value = delimiter.join(inner_types)
 
         return type_value
 
-    def get_inner_tuple_types(
-        tuple_node: astroid.Tuple,
-        classdefs: Optional[Dict[str, astroid.ClassDef]] = None,
-    ) -> List[str]:
-        if classdefs is None:
-            # This shouldn't be None since it is called from within
-            # parse_annassign_node(...) which checks the value of classdefs,
-            # but check just in case.
-            classdefs = {}
-        assert classdefs is not None
-
+    def get_inner_tuple_types(tuple_node: astroid.Tuple) -> List[str]:
         # avoid using Set to keep order
         inner_types: List[str] = []
         for child in tuple_node.get_children():
-            child_type = helper(child, classdefs)
+            child_type = helper(child)
             if child_type not in inner_types:
                 inner_types.append(child_type)
         return inner_types
@@ -189,7 +163,7 @@ def parse_annassign_node(
             delimiter = " | "
         return delimiter
 
-    return ParsedAnnAssign(node.target.name, helper(node.annotation, classdefs))
+    return ParsedAnnAssign(node.target.name, helper(node.annotation))
 
 
 def has_dataclass_decorator(decorators: Optional[astroid.Decorators]) -> bool:
@@ -202,3 +176,19 @@ def has_dataclass_decorator(decorators: Optional[astroid.Decorators]) -> bool:
         else decorator.name == "dataclass"
         for decorator in decorators.nodes
     )
+
+
+def ensure_possible_interface_references_valid(interfaces: PreparedInterfaces) -> None:
+    interface_names = set(interfaces.keys())
+
+    for interface, attributes in interfaces.items():
+        for attribute_name, attribute_type in attributes.items():
+            if not isinstance(attribute_type, PossibleInterfaceReference):
+                continue
+
+            if attribute_type not in interface_names:
+                raise RuntimeError(
+                    f"Invalid nested Interface reference '{attribute_type}'"
+                    f" found for interface {interface}!\n"
+                    f"Does '{attribute_type}' exist and is it an Interface?"
+                )
