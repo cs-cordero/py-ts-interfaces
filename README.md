@@ -41,7 +41,8 @@ By subclassing this object, you identify to the also-packaged script that you
 want it to be serialized to an interface file.
 
 1. First, hook up your dataclasses:
-```
+
+```python
 # views.py
 from dataclasses import dataclass
 from py_ts_interfaces import Interface
@@ -73,7 +74,7 @@ allows only appends.  Be warned, duplicate interfaces are not tested.
 
 
 3. The resulting file will look like this:
-```
+```typescript
 // interface.ts
 interface MyComponentProps {
     name: string;
