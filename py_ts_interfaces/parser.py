@@ -38,9 +38,10 @@ PreparedInterfaces = Dict[str, InterfaceAttributes]
 
 
 class Parser:
-    def __init__(self, interface_qualname: str) -> None:
+    def __init__(self, interface_qualname: str, export: bool = True) -> None:
         self.interface_qualname = interface_qualname
         self.prepared: PreparedInterfaces = {}
+        self._export = export
 
     def parse(self, code: str) -> None:
         queue = deque([astroid.parse(code)])
@@ -76,7 +77,8 @@ class Parser:
         serialized: List[str] = []
 
         for interface, attributes in self.prepared.items():
-            s = f"interface {interface} {{\n"
+            s = "export " if self._export else ""
+            s += f"interface {interface} {{\n"
             for attribute_name, attribute_type in attributes.items():
                 s += f"    {attribute_name}: {attribute_type};\n"
             s += "}"
