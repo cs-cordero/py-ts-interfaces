@@ -10,7 +10,6 @@ from py_ts_interfaces import Interface, Parser
 
 def main() -> None:
     args = get_args_namespace()
-
     # parse datatype mapping
     datatype_map = {}
     for typemap in args.typemap:
@@ -69,6 +68,7 @@ def get_args_namespace() -> argparse.Namespace:
         required=False,
         nargs="+",
         help="Define custom simple data type alises. For instance, to map custom type `String` to python builtin `str`: `--typemap String str`. Use flag several times to specify several mappings.",
+        default=[],
     )
     argparser.add_argument("-a, --append", action="store_true", dest="should_append")
     return argparser.parse_args()
