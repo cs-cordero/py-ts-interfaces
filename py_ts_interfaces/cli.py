@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 import warnings
 from collections import deque
 from typing import Iterable, List, Set
@@ -9,11 +10,25 @@ from py_ts_interfaces import Interface, Parser
 
 def main() -> None:
     args = get_args_namespace()
+
+    # parse datatype mapping
+    datatype_map = {}
+    for typemap in args.typemap:
+        try:
+            from_type, to_type = typemap
+            datatype_map[from_type] = to_type
+        except Exception:
+            print(
+                "Unable to parse custom type mapping. Please use --help for usage details."
+            )
+            sys.exit(1)
     if os.path.isdir(args.outpath):
         raise Exception(f"{args.outpath} is a directory! Aborting.")
 
     interface_parser = Parser(
-        f"{Interface.__module__}.{Interface.__name__}", export=args.export
+        f"{Interface.__module__}.{Interface.__name__}",
+        export=args.export,
+        datatype_map=datatype_map,
     )
 
     for code in read_code_from_files(get_paths_to_py_files(args.paths)):
@@ -47,6 +62,14 @@ def get_args_namespace() -> argparse.Namespace:
         "-o, --outpath", action="store", default="interface.ts", dest="outpath"
     )
     argparser.add_argument("-e", "--export", action="store_true", required=False)
+    argparser.add_argument(
+        "-m",
+        "--typemap",
+        action="append",
+        required=False,
+        nargs="+",
+        help="Define custom simple data type alises. For instance, to map custom type `String` to python builtin `str`: `--typemap String str`. Use flag several times to specify several mappings.",
+    )
     argparser.add_argument("-a, --append", action="store_true", dest="should_append")
     return argparser.parse_args()
 
