@@ -12,7 +12,9 @@ def main() -> None:
     if os.path.isdir(args.outpath):
         raise Exception(f"{args.outpath} is a directory! Aborting.")
 
-    interface_parser = Parser(f"{Interface.__module__}.{Interface.__name__}")
+    interface_parser = Parser(
+        f"{Interface.__module__}.{Interface.__name__}", export=args.export
+    )
 
     for code in read_code_from_files(get_paths_to_py_files(args.paths)):
         interface_parser.parse(code)
@@ -44,6 +46,7 @@ def get_args_namespace() -> argparse.Namespace:
     argparser.add_argument(
         "-o, --outpath", action="store", default="interface.ts", dest="outpath"
     )
+    argparser.add_argument("-e", "--export", action="store_true", required=False)
     argparser.add_argument("-a, --append", action="store_true", dest="should_append")
     return argparser.parse_args()
 
