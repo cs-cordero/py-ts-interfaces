@@ -1,6 +1,8 @@
+import sys
 import warnings
 from collections import deque
 from typing import Dict, List, NamedTuple, Optional, Union
+
 
 import astroid
 
@@ -38,10 +40,24 @@ PreparedInterfaces = Dict[str, InterfaceAttributes]
 
 
 class Parser:
-    def __init__(self, interface_qualname: str, export: bool = True) -> None:
+    def __init__(
+        self,
+        interface_qualname: str,
+        export: bool = True,
+        datatype_map: Dict[str, str] = {},
+    ) -> None:
         self.interface_qualname = interface_qualname
         self.prepared: PreparedInterfaces = {}
         self._export = export
+
+        # make sure that custom datamap resolves to a known datatype
+        for dtype in datatype_map.values():
+            if not dtype in TYPE_MAP.keys():
+                print(f"Unkown datatype {dtype}")
+                sys.exit(1)
+
+        # add custom datatypes
+        TYPE_MAP.update(datatype_map)
 
     def parse(self, code: str) -> None:
         queue = deque([astroid.parse(code)])
