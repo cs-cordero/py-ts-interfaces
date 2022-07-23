@@ -8,3 +8,7 @@ __pycache__
 build/
 dist/
 .vscode/
+.idea
+.python-version
+requirements.txt
+*.ts

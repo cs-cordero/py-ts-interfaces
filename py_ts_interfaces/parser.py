@@ -135,7 +135,7 @@ def parse_annassign_node(node: astroid.AnnAssign) -> ParsedAnnAssign:
         elif isinstance(node, astroid.Subscript):
             subscript_value = node.value
             type_format = SUBSCRIPT_FORMAT_MAP[subscript_value.name]
-            type_value = type_format % helper(node.slice.value)
+            type_value = type_format % helper(node.slice)
 
         elif isinstance(node, astroid.Tuple):
             inner_types = get_inner_tuple_types(node)
@@ -155,7 +155,7 @@ def parse_annassign_node(node: astroid.AnnAssign) -> ParsedAnnAssign:
         return inner_types
 
     def get_inner_tuple_delimiter(tuple_node: astroid.Tuple) -> str:
-        parent_subscript_name = tuple_node.parent.parent.value.name
+        parent_subscript_name = tuple_node.parent.value.name
         delimiter = "UNKNOWN"
         if parent_subscript_name == "Tuple":
             delimiter = ", "

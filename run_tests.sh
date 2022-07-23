@@ -24,7 +24,7 @@ function capture_stdout_and_stderr_if_successful {
 capture_stdout_and_stderr_if_successful black --check py_ts_interfaces
 capture_stdout_and_stderr_if_successful flake8 --count py_ts_interfaces
 capture_stdout_and_stderr_if_successful mypy py_ts_interfaces
-capture_stdout_and_stderr_if_successful isort -rc -c py_ts_interfaces
+capture_stdout_and_stderr_if_successful isort -c py_ts_interfaces
 capture_stdout_and_stderr_if_successful pytest
 
 exit $AT_LEAST_ONE_ERROR
