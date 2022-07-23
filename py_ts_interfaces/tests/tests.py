@@ -1,13 +1,15 @@
 from copy import deepcopy
 from itertools import count
+from typing import Any
 from unittest.mock import patch
 
 import pytest
-from astroid import extract_node
+from astroid import AnnAssign, ClassDef, extract_node
 
 from py_ts_interfaces import Interface, Parser
 from py_ts_interfaces.parser import (
     PossibleInterfaceReference,
+    PreparedInterfaces,
     ensure_possible_interface_references_valid,
     get_types_from_classdef,
     parse_annassign_node,
@@ -16,7 +18,7 @@ from py_ts_interfaces.tests import utils
 
 
 @pytest.fixture(scope="module")
-def interface_qualname():
+def interface_qualname() -> str:
     return f"{Interface.__module__}.{Interface.__qualname__}"
 
 
@@ -78,62 +80,33 @@ TEST_FIVE = """
         pass
 """
 
-if PYTHON_VERSION < 3.8:
-    TEST_SIX = """
-        from dataclasses import dataclass
-        from py_ts_interfaces import Interface
+TEST_SIX = """
+    from dataclasses import dataclass
+    from py_ts_interfaces import Interface
 
-        @dataclass  #@
-        class Foo(Interface):
-            aaa: str
-            bbb: int
-            ccc: bool
-            ddd = 100
+    @dataclass
+    class Foo(Interface):  #@
+        aaa: str
+        bbb: int
+        ccc: bool
+        ddd = 100
 
-            def foo(self) -> None:
-                pass
-    """
-    TEST_SEVEN = """
-        from dataclasses import dataclass
-        from py_ts_interfaces import Interface
+        def foo(self) -> None:
+            pass
+"""
+TEST_SEVEN = """
+    from dataclasses import dataclass
+    from py_ts_interfaces import Interface
 
-        @dataclass  #@
-        class Foo(Interface):
-            def foo(self) -> None:
-                pass
+    @dataclass
+    class Foo(Interface):  #@
+        def foo(self) -> None:
+            pass
 
-            aaa: str = 'hello'
-            bbb: int = 5
-            ccc: bool = True
-    """
-else:
-    TEST_SIX = """
-        from dataclasses import dataclass
-        from py_ts_interfaces import Interface
-
-        @dataclass
-        class Foo(Interface):  #@
-            aaa: str
-            bbb: int
-            ccc: bool
-            ddd = 100
-
-            def foo(self) -> None:
-                pass
-    """
-    TEST_SEVEN = """
-        from dataclasses import dataclass
-        from py_ts_interfaces import Interface
-
-        @dataclass
-        class Foo(Interface):  #@
-            def foo(self) -> None:
-                pass
-
-            aaa: str = 'hello'
-            bbb: int = 5
-            ccc: bool = True
-    """
+        aaa: str = 'hello'
+        bbb: int = 5
+        ccc: bool = True
+"""
 
 TEST_EIGHT = """
     from dataclasses import dataclass
@@ -203,7 +176,9 @@ TEST_TEN = """
         (TEST_TEN, 4),
     ],
 )
-def test_parser_parse(code, expected_call_count, interface_qualname):
+def test_parser_parse(
+    code: str, expected_call_count: int, interface_qualname: str
+) -> None:
     parser = Parser(interface_qualname)
     with patch("py_ts_interfaces.parser.get_types_from_classdef") as mock_writer:
         parser.parse(code=code)
@@ -226,7 +201,13 @@ def test_parser_parse(code, expected_call_count, interface_qualname):
         ),
     ],
 )
-def test_parser_flush(prepared_mocks, expected, interface_qualname):
+def test_parser_flush(
+    prepared_mocks: Any, expected: str, interface_qualname: str
+) -> None:
+    """
+    When the parser flushes its prepared interfaces, it should generate
+    valid TS interfaces.
+    """
     parser = Parser(interface_qualname)
     parser.prepared = prepared_mocks
     assert parser.flush() == expected
@@ -234,56 +215,60 @@ def test_parser_flush(prepared_mocks, expected, interface_qualname):
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
-    "node, expected",
+    "code, expected",
     [
-        (extract_node("baz: str"), ("baz", "string")),
-        (extract_node("ace: int"), ("ace", "number")),
-        (extract_node("ace: float"), ("ace", "number")),
-        (extract_node("ace: complex"), ("ace", "number")),
-        (extract_node("ace: bool"), ("ace", "boolean")),
-        (extract_node("ace: Any"), ("ace", "any")),
-        (extract_node("foo: List"), ("foo", "Array<any>")),
-        (extract_node("bar: Tuple"), ("bar", "[any]")),
-        (extract_node("foo: List[str]"), ("foo", "Array<string>")),
-        (extract_node("bar: Tuple[str, int]"), ("bar", "[string, number]")),
-        (extract_node("baz: Optional[str]"), ("baz", "string | null")),
-        (extract_node("ace: Optional[int]"), ("ace", "number | null")),
-        (extract_node("ace: Optional[float]"), ("ace", "number | null")),
-        (extract_node("ace: Optional[complex]"), ("ace", "number | null")),
-        (extract_node("ace: Optional[bool]"), ("ace", "boolean | null")),
-        (extract_node("ace: Optional[Any]"), ("ace", "any | null")),
+        ("baz: str", ("baz", "string")),
+        ("ace: int", ("ace", "number")),
+        ("ace: float", ("ace", "number")),
+        ("ace: complex", ("ace", "number")),
+        ("ace: bool", ("ace", "boolean")),
+        ("ace: Any", ("ace", "any")),
+        ("foo: List", ("foo", "Array<any>")),
+        ("bar: Tuple", ("bar", "[any]")),
+        ("foo: List[str]", ("foo", "Array<string>")),
+        ("bar: Tuple[str, int]", ("bar", "[string, number]")),
+        ("baz: Optional[str]", ("baz", "string | null")),
+        ("ace: Optional[int]", ("ace", "number | null")),
+        ("ace: Optional[float]", ("ace", "number | null")),
+        ("ace: Optional[complex]", ("ace", "number | null")),
+        ("ace: Optional[bool]", ("ace", "boolean | null")),
+        ("ace: Optional[Any]", ("ace", "any | null")),
         (
-            extract_node("bar: Optional[Tuple[str, int]]"),
+            "bar: Optional[Tuple[str, int]]",
             ("bar", "[string, number] | null"),
         ),
         (
-            extract_node("bar: Tuple[List[Optional[Tuple[str, int]]], str, int]"),
+            "bar: Tuple[List[Optional[Tuple[str, int]]], str, int]",
             ("bar", "[Array<[string, number] | null>, string, number]"),
         ),
-        (extract_node("lol: Union[str, int, float]"), ("lol", "string | number")),
-        (extract_node("lol: Union"), ("lol", "any")),
+        ("lol: Union[str, int, float]", ("lol", "string | number")),
+        ("lol: Union", ("lol", "any")),
         (
-            extract_node("whatever: 'StringForward'"),
+            "whatever: 'StringForward'",
             ("whatever", PossibleInterfaceReference("StringForward")),
         ),
         (
-            extract_node("whatever: NakedReference"),
+            "whatever: NakedReference",
             ("whatever", PossibleInterfaceReference("NakedReference")),
         ),
-        (extract_node("whatever: 1234"), ("whatever", "UNKNOWN")),
+        ("whatever: 1234", ("whatever", "UNKNOWN")),
     ],
 )
-def test_parse_annassign_node(node, expected):
-    assert parse_annassign_node(node) == expected
+def test_parse_annassign_node(code: str, expected: Any) -> None:
+    ann_assign = extract_node(code)
+    assert isinstance(ann_assign, AnnAssign)
+    assert parse_annassign_node(ann_assign) == expected
 
 
 @pytest.mark.parametrize("code, expected_call_count", [(TEST_SIX, 0), (TEST_SEVEN, 0)])
-def test_get_types_from_classdef(code, expected_call_count):
-    classdef = extract_node(code)
+def test_get_types_from_classdef(code: str, expected_call_count: int) -> None:
+    class_def = extract_node(code)
+    assert isinstance(class_def, ClassDef)
     with patch("py_ts_interfaces.parser.parse_annassign_node") as annassign_parser:
         k, v = count(0, 2), count(1, 2)
         annassign_parser.side_effect = lambda x: (str(next(k)), str(next(v)))
-        result = get_types_from_classdef(classdef)
+
+        result = get_types_from_classdef(class_def)
         assert result == {"0": "1", "2": "3", "4": "5"}
         assert annassign_parser.call_count == 3
 
@@ -299,7 +284,9 @@ def test_get_types_from_classdef(code, expected_call_count):
         {"interfaceA": {"name": PossibleInterfaceReference("interfaceA")}},
     ],
 )
-def test_ensure_possible_interface_references_valid__succeeds(interfaces):
+def test_ensure_possible_interface_references_valid__succeeds(
+    interfaces: PreparedInterfaces,
+) -> None:
     copied_interfaces = deepcopy(interfaces)
     ensure_possible_interface_references_valid(interfaces)
     assert copied_interfaces == interfaces  # Make sure no mutations occurred
@@ -315,6 +302,8 @@ def test_ensure_possible_interface_references_valid__succeeds(interfaces):
         {"interfaceA": {"name": PossibleInterfaceReference("interfaceB")}},
     ],
 )
-def test_ensure_possible_interface_references_valid__fails(interfaces):
+def test_ensure_possible_interface_references_valid__fails(
+    interfaces: PreparedInterfaces,
+) -> None:
     with pytest.raises(RuntimeError):
         ensure_possible_interface_references_valid(interfaces)
