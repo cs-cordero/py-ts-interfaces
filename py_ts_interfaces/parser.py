@@ -83,7 +83,7 @@ class Parser:
             serialized.append(s)
 
         self.prepared.clear()
-        return "\n\n".join(serialized).strip()
+        return "\n\n".join(serialized).strip() + "\n"
 
 
 def get_types_from_classdef(node: astroid.ClassDef) -> Dict[str, str]:

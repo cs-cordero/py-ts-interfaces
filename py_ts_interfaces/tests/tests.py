@@ -188,16 +188,16 @@ def test_parser_parse(
 @pytest.mark.parametrize(
     "prepared_mocks, expected",
     [
-        ({"abc": {"def": "ghi"}}, """interface abc {\n    def: ghi;\n}"""),
+        ({"abc": {"def": "ghi"}}, """interface abc {\n    def: ghi;\n}\n"""),
         (
             {"abc": {"def": "ghi", "jkl": "mno"}},
-            """interface abc {\n    def: ghi;\n    jkl: mno;\n}""",
+            """interface abc {\n    def: ghi;\n    jkl: mno;\n}\n""",
         ),
-        ({"abc": {}}, """interface abc {\n}"""),
+        ({"abc": {}}, """interface abc {\n}\n"""),
         (
             {"abc": {"def": PossibleInterfaceReference("ghi")}, "ghi": {"jkl": "mno"}},
             """interface abc {\n    def: ghi;\n}\n\n"""
-            """interface ghi {\n    jkl: mno;\n}""",
+            """interface ghi {\n    jkl: mno;\n}\n""",
         ),
     ],
 )

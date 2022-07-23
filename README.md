@@ -165,6 +165,10 @@ moving back and forth from client to server.  Many of these features, whether th
 * conditional types
 * classes
 
+## Contributing
+
+Interested in contributing?  You're awesome!  It's not much, but here's some notes to get you started [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Author
 
 [Christopher Sabater Cordero](https://chrisdoescoding.com)
