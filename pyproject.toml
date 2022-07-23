@@ -13,7 +13,7 @@ documentation = 'https://github.com/cs-cordero/py-ts-interfaces'
 keywords = ['python', 'typescript', 'interfaces']
 
 [tool.poetry.dependencies]
-python = '^3.10'
+python = '^3.7'
 astroid = '2.12.2'
 
 [tool.poetry.dev-dependencies]
