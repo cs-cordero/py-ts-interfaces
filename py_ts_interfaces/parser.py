@@ -20,12 +20,14 @@ TYPE_MAP: Dict[str, str] = {
     "float": "number",
     "complex": "number",
     "Any": "any",
+    "Dict": "Record<any, any>",
     "List": "Array<any>",
     "Tuple": "[any]",
     "Union": "any",
 }
 
 SUBSCRIPT_FORMAT_MAP: Dict[str, str] = {
+    "Dict": "Record<%s>",
     "List": "Array<%s>",
     "Optional": "%s | null",
     "Tuple": "[%s]",
@@ -157,7 +159,7 @@ def parse_annassign_node(node: astroid.AnnAssign) -> ParsedAnnAssign:
     def get_inner_tuple_delimiter(tuple_node: astroid.Tuple) -> str:
         parent_subscript_name = tuple_node.parent.value.name
         delimiter = "UNKNOWN"
-        if parent_subscript_name == "Tuple":
+        if parent_subscript_name in {"Dict", "Tuple"}:
             delimiter = ", "
         elif parent_subscript_name == "Union":
             delimiter = " | "
