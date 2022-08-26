@@ -136,8 +136,10 @@ variables.
 | bool                            | boolean                       |
 | List                            | Array\<any\>                  |
 | Tuple                           | [any]                         |
+| Dict                            | Record<any, any>              |
 | List[T]                         | Array[T]                      |
 | Tuple[T, U]                     | [T, U]                        |
+| Dict[T, U]                      | Record<T, U>                  |
 | Optional[T]                     | T \| null                     |
 | Union[T, U, V]                  | T \| U \| V                   |
 
