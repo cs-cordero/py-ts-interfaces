@@ -134,6 +134,7 @@ variables.
 | float                           | number                        |
 | complex                         | number                        |
 | bool                            | boolean                       |
+| datetime*                        | Date                          |
 | List                            | Array\<any\>                  |
 | Tuple                           | [any]                         |
 | Dict                            | Record<any, any>              |
@@ -142,6 +143,8 @@ variables.
 | Dict[T, U]                      | Record<T, U>                  |
 | Optional[T]                     | T \| null                     |
 | Union[T, U, V]                  | T \| U \| V                   |
+
+*_Note that datetime (from the datetime library) requires to be defined exactly like that_
 
 ## Planned Supported Mappings
 

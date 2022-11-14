@@ -19,6 +19,7 @@ TYPE_MAP: Dict[str, str] = {
     "int": "number",
     "float": "number",
     "complex": "number",
+    "datetime": "Date",
     "Any": "any",
     "Dict": "Record<any, any>",
     "List": "Array<any>",

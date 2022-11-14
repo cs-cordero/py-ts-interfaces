@@ -222,6 +222,7 @@ def test_parser_flush(
         ("ace: float", ("ace", "number")),
         ("ace: complex", ("ace", "number")),
         ("ace: bool", ("ace", "boolean")),
+        ("bar: datetime", ("bar", "Date")),
         ("ace: Any", ("ace", "any")),
         ("foo: List", ("foo", "Array<any>")),
         ("foo: Dict", ("foo", "Record<any, any>")),
@@ -234,7 +235,9 @@ def test_parser_flush(
         ("ace: Optional[complex]", ("ace", "number | null")),
         ("ace: Optional[bool]", ("ace", "boolean | null")),
         ("ace: Optional[Any]", ("ace", "any | null")),
+        ("ace: Optional[datetime]", ("ace", "Date | null")),
         ("foo: Dict[str, int]", ("foo", "Record<string, number>")),
+        ("ace: Dict[datetime, str]", ("ace", "Record<Date, string>")),
         (
             "bar: Optional[Tuple[str, int]]",
             ("bar", "[string, number] | null"),
