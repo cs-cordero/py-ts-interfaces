@@ -19,19 +19,19 @@ TYPE_MAP: Dict[str, str] = {
     "int": "number",
     "float": "number",
     "complex": "number",
-    "Any": "any",
-    "Dict": "Record<any, any>",
-    "List": "Array<any>",
-    "Tuple": "[any]",
-    "Union": "any",
+    "any": "any",
+    "dict": "Record<any, any>",
+    "list": "Array<any>",
+    "tuple": "[any]",
+    "union": "any",
 }
 
 SUBSCRIPT_FORMAT_MAP: Dict[str, str] = {
-    "Dict": "Record<%s>",
-    "List": "Array<%s>",
-    "Optional": "%s | null",
-    "Tuple": "[%s]",
-    "Union": "%s",
+    "dict": "Record<%s>",
+    "list": "Array<%s>",
+    "optional": "%s | null",
+    "tuple": "[%s]",
+    "union": "%s",
 }
 
 
@@ -118,7 +118,7 @@ def parse_annassign_node(node: astroid.AnnAssign) -> ParsedAnnAssign:
             # We will have to assume it is a valid forward reference now and
             # then just double check that it does indeed reference another
             # Interface class as a post-parse step.
-            type_value = TYPE_MAP.get(node.name, PossibleInterfaceReference(node.name))
+            type_value = TYPE_MAP.get(node.name.lower(), PossibleInterfaceReference(node.name))
             if node.name == "Union":
                 warnings.warn(
                     "Came across an annotation for Union without any indexed types!"
@@ -136,7 +136,7 @@ def parse_annassign_node(node: astroid.AnnAssign) -> ParsedAnnAssign:
 
         elif isinstance(node, astroid.Subscript):
             subscript_value = node.value
-            type_format = SUBSCRIPT_FORMAT_MAP[subscript_value.name]
+            type_format = SUBSCRIPT_FORMAT_MAP[subscript_value.name.lower()]
             type_value = type_format % helper(node.slice)
 
         elif isinstance(node, astroid.Tuple):
@@ -157,11 +157,11 @@ def parse_annassign_node(node: astroid.AnnAssign) -> ParsedAnnAssign:
         return inner_types
 
     def get_inner_tuple_delimiter(tuple_node: astroid.Tuple) -> str:
-        parent_subscript_name = tuple_node.parent.value.name
+        parent_subscript_name = tuple_node.parent.value.name.lower()
         delimiter = "UNKNOWN"
-        if parent_subscript_name in {"Dict", "Tuple"}:
+        if parent_subscript_name in {"dict", "tuple"}:
             delimiter = ", "
-        elif parent_subscript_name == "Union":
+        elif parent_subscript_name == "union":
             delimiter = " | "
         return delimiter
 
