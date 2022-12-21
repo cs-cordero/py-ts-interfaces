@@ -71,6 +71,8 @@ You may also use the following arguments:
 * `-o, --output [filepath]`:  where the file will be saved. default is `interface.ts`.
 * `-a, --append`:  by default each run will overwrite the output file. this flag
 allows only appends.  Be warned, duplicate interfaces are not tested.
+* `-e, --export`:  whether the interface definitions should be prepended with `export`; 
+private python classes will be omitted. 
 
 
 3. The resulting file will look like this:
