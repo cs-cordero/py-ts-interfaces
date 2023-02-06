@@ -1,3 +1,4 @@
+import re
 import warnings
 from collections import deque
 from typing import Dict, List, NamedTuple, Optional, Union
@@ -39,6 +40,14 @@ InterfaceAttributes = Dict[str, str]
 PreparedInterfaces = Dict[str, InterfaceAttributes]
 
 
+def camelize(s):
+    """Convert a string from underscore naming convention to camel-case.
+    """
+    # Force a character to be at the start, so that strings starting with underscore
+    # do not get that initial underscore removed.
+    return re.sub(r'(.)_([a-z])', lambda x: x.group(1) + x.group(2).upper(), s)
+
+
 class Parser:
     def __init__(self, interface_qualname: str) -> None:
         self.interface_qualname = interface_qualname
@@ -74,12 +83,18 @@ class Parser:
             self.prepared[current.name] = get_types_from_classdef(current)
         ensure_possible_interface_references_valid(self.prepared)
 
-    def flush(self) -> str:
+    def flush(self, should_camelize: bool) -> str:
         serialized: List[str] = []
 
         for interface, attributes in self.prepared.items():
+            if should_camelize:
+                interface = camelize(interface)
+
             s = f"interface {interface} {{\n"
             for attribute_name, attribute_type in attributes.items():
+                if should_camelize:
+                    attribute_name = camelize(attribute_name)
+
                 s += f"    {attribute_name}: {attribute_type};\n"
             s += "}"
             serialized.append(s)
