@@ -235,6 +235,7 @@ def test_parser_flush(
         ("ace: Optional[bool]", ("ace", "boolean | null")),
         ("ace: Optional[Any]", ("ace", "any | null")),
         ("foo: Dict[str, int]", ("foo", "Record<string, number>")),
+        ("foo: Dict[int, int]", ("foo", "Record<number, number>")),
         (
             "bar: Optional[Tuple[str, int]]",
             ("bar", "[string, number] | null"),
