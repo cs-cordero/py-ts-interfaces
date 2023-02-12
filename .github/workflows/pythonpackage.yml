@@ -18,9 +18,8 @@ jobs:
     - name: Install dependencies
       run: |
         curl -sSL https://install.python-poetry.org | python
-        source $HOME/.poetry/env
         python -m pip install --upgrade pip
-        poetry install
+        $HOME/.local/bin/poetry install
     - name: Run test suite
       run: |
-        $HOME/.poetry/bin/poetry run ./run_tests.sh
+        $HOME/.local/bin/poetry run ./run_tests.sh
