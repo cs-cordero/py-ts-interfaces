@@ -45,7 +45,7 @@ def camelize(s):
     """
     # Force a character to be at the start, so that strings starting with underscore
     # do not get that initial underscore removed.
-    return re.sub(r'(.)_([a-z])', lambda x: x.group(1) + x.group(2).upper(), s)
+    return re.sub(r'(?=.)_([a-z])', lambda x: x.group(1).upper(), s)
 
 
 class Parser:
