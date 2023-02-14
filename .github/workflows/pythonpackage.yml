@@ -2,7 +2,7 @@ name: Continuous Integration
 on:
   pull_request:
     types: [assigned, opened, synchronize, reopened]
-  workflow_dispatch
+  workflow_dispatch:
   push:
     branches:
       - master
