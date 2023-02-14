@@ -142,18 +142,30 @@ def parse_annassign_node(node: astroid.AnnAssign) -> ParsedAnnAssign:
         elif isinstance(node, astroid.Tuple):
             inner_types = get_inner_tuple_types(node)
             delimiter = get_inner_tuple_delimiter(node)
+
+            if delimiter == " | ":
+                inner_types_deduplicated = []
+
+                # Deduplicate inner types using a list to preserve order
+                for inner_type in inner_types:
+                    if inner_type not in inner_types_deduplicated:
+                        inner_types_deduplicated.append(inner_type)
+
+                inner_types = inner_types_deduplicated
+
             if delimiter != "UNKNOWN":
                 type_value = delimiter.join(inner_types)
 
         return type_value
 
     def get_inner_tuple_types(tuple_node: astroid.Tuple) -> List[str]:
-        # avoid using Set to keep order
+        # avoid using Set to keep order. We also want repetitions
+        # to avoid problems with tuples where repeated types do have
+        # a meaning (e.g., Dict[int, int]).
         inner_types: List[str] = []
         for child in tuple_node.get_children():
-            child_type = helper(child)
-            if child_type not in inner_types:
-                inner_types.append(child_type)
+            inner_types.append(helper(child))
+
         return inner_types
 
     def get_inner_tuple_delimiter(tuple_node: astroid.Tuple) -> str:
