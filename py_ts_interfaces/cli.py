@@ -46,8 +46,11 @@ def get_args_namespace() -> argparse.Namespace:
     )
     argparser.add_argument("-a, --append", action="store_true", dest="should_append")
     argparser.add_argument(
-        "-c, --camelize", action="store_true", dest="should_camelize",
-        help="Camelize the interface names and attributes.")
+        "-c, --camelize",
+        action="store_true",
+        dest="should_camelize",
+        help="Camelize the interface names and attributes.",
+    )
     return argparser.parse_args()
 
 

@@ -216,12 +216,15 @@ def test_parser_flush(
 @pytest.mark.parametrize(
     "prepared_mocks, expected",
     [
-        ({"abc": {"snake_case": "ghi"}}, """interface abc {\n    snakeCase: ghi;\n}\n"""),
+        (
+            {"abc": {"snake_case": "ghi"}},
+            """interface abc {\n    snakeCase: ghi;\n}\n""",
+        ),
         (
             {"abc": {"word_one_two": "ghi", "a_b_c": "mno"}},
             """interface abc {\n    wordOneTwo: ghi;\n    aBC: mno;\n}\n""",
         ),
-        ({"multiple__underscore": {}}, """interface multiple_Underscore {\n}\n""")
+        ({"multiple__underscore": {}}, """interface multiple_Underscore {\n}\n"""),
     ],
 )
 def test_parser_flush_camelized(
@@ -234,6 +237,7 @@ def test_parser_flush_camelized(
     parser = Parser(interface_qualname)
     parser.prepared = prepared_mocks
     assert parser.flush(True) == expected
+
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
