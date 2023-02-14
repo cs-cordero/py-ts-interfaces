@@ -74,11 +74,12 @@ class Parser:
             self.prepared[current.name] = get_types_from_classdef(current)
         ensure_possible_interface_references_valid(self.prepared)
 
-    def flush(self) -> str:
+    def flush(self, should_export: bool) -> str:
         serialized: List[str] = []
 
         for interface, attributes in self.prepared.items():
-            s = f"interface {interface} {{\n"
+            s = self._get_interface_string(interface, should_export)
+            s += " {\n"
             for attribute_name, attribute_type in attributes.items():
                 s += f"    {attribute_name}: {attribute_type};\n"
             s += "}"
@@ -86,6 +87,12 @@ class Parser:
 
         self.prepared.clear()
         return "\n\n".join(serialized).strip() + "\n"
+
+    @staticmethod
+    def _get_interface_string(interface: str, should_export: bool):
+        if not should_export or interface[0]=="_":
+            return f"interface {interface}"
+        return f"export interface {interface}"
 
 
 def get_types_from_classdef(node: astroid.ClassDef) -> Dict[str, str]:
