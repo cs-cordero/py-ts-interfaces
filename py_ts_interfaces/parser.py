@@ -83,6 +83,7 @@ class Parser:
                 s += f"    {attribute_name}: {attribute_type};\n"
             s += "}"
             serialized.append(s)
+            serialized.append("export type {" + interface + "}")
 
         self.prepared.clear()
         return "\n\n".join(serialized).strip() + "\n"
