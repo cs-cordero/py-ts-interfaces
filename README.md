@@ -10,6 +10,11 @@
 This library provides utilities that convert Python dataclasses with type
 annotations to a TypeScript `interface` and serializes them to a file.
 
+## py-ts-interfaces is READ-ONLY.
+
+I no longer have the time to maintain this project.  As a result, I am archiving the repository.  Teams who wish to use this project are free to do so and also free to fork if you'd like.
+
+
 ## Installation
 
 ```
